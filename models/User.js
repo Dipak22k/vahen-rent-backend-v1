@@ -18,21 +18,58 @@ const userSchema = new mongoose.Schema(
 
   role: {
     type: String,
-    enum: ["Owner","borrower", "lender"],
+    enum: ["owner", "borrower", "lender"],
     required: false,
   },
 
-  /* ✅ Avatar */
   avatar: {
     type: String,
     default: null,
   },
 
-  /* 🔐 ADD THIS FOR KYC */
-  kycStatus: {
+  authProvider: {
     type: String,
-    enum: ["pending", "verified", "rejected"],
-    default: "pending",
+    enum: ["email", "google"],
+    default: "email",
+  },
+
+  googleId: {
+    type: String,
+    default: null,
+  },
+
+  /* 🔐 ADVANCED KYC */
+  kyc: {
+    status: {
+      type: String,
+      enum: ["not_started", "pending", "verified", "rejected"],
+      default: "not_started",
+    },
+
+    idImage: {
+      type: String,
+      default: null,
+    },
+
+    selfieImage: {
+      type: String,
+      default: null,
+    },
+
+    faceMatchScore: {
+      type: Number,
+      default: null,
+    },
+
+    verifiedAt: {
+      type: Date,
+      default: null,
+    },
+
+    expiryDate: {
+      type: Date,
+      default: null,
+    },
   },
 },
 { timestamps: true }

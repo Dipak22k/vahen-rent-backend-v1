@@ -1,3 +1,5 @@
+// models/Chat.js
+
 const mongoose = require("mongoose");
 
 const ChatSchema = new mongoose.Schema(
@@ -23,6 +25,13 @@ const ChatSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: ["pending", "accepted", "rejected"],
+      default: "pending",
+    },
+
+    // ✅ ADD THIS
+    finalStatus: {
+      type: String,
+      enum: ["pending", "confirmed", "cancelled","closed"],
       default: "pending",
     },
   },

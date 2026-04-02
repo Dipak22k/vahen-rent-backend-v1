@@ -11,13 +11,14 @@ const {
   verifyOtp,
   register,
   login,
+  sendResetOtp,   // ✅ ADD THIS
   verifyResetOtp,
-  resetPassword
+  resetPassword,
+  googleAuth
 } = require("../controllers/authController");
 
 
 /* ================= UPDATE AVATAR ================= */
-
 router.post(
   "/update-avatar",
   authMiddleware,
@@ -28,16 +29,20 @@ router.post(
         return res.status(400).json({ message: "No file uploaded" });
       }
 
-      const baseUrl = `${req.protocol}://${req.get("host")}`;
-      const avatarUrl = `${baseUrl}/uploads/profile/${req.file.filename}`;
+      // ✅ STORE ONLY RELATIVE PATH
+      const avatarPath = `/uploads/profile/${req.file.filename}`;
 
-      await User.findByIdAndUpdate(req.user.id, {
-        avatar: avatarUrl,
-      });
+      const updatedUser = await User.findByIdAndUpdate(
+        req.user.id,
+        { avatar: avatarPath },
+        { new: true }
+      );
 
+      // ✅ CLEAN RESPONSE
       res.json({
-        message: "Avatar updated",
-        avatar: avatarUrl,
+        message: "Avatar updated successfully",
+        avatar: avatarPath,
+        user: updatedUser,
       });
 
     } catch (err) {
@@ -77,14 +82,33 @@ router.get("/check-kyc/:userId", async (req, res) => {
 });
 
 
-/* ================= AUTH ROUTES ================= */
 
+
+/* ================= GET USER BY ID ================= */
+router.get("/users/:id", async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select("-password");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json(user); // ✅ important: return clean user
+  } catch (err) {
+    console.error("GET USER ERROR:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+
+/* ================= AUTH ROUTES ================= */
 router.post("/send-otp", sendOtp);
 router.post("/verify-otp", verifyOtp);
 router.post("/register", register);
 router.post("/login", login);
+router.post("/send-reset-otp", sendResetOtp); // ✅ FIX
 router.post("/verify-reset-otp", verifyResetOtp);
 router.post("/reset-password", resetPassword);
-
+router.post("/google", googleAuth);
 
 module.exports = router;

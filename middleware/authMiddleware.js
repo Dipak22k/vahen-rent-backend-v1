@@ -19,9 +19,9 @@ module.exports = async (req, res, next) => {
       return res.status(401).json({ message: "User not found" });
     }
 
-    /* ✅ THIS IS WHAT YOUR CAR ROUTES NEED */
     req.user = {
-      id: user._id,
+      id: user._id,     // ✅ OLD SYSTEM SAFE
+      _id: user._id,    // ✅ NEW KYC SUPPORT
       role: user.role,
     };
 

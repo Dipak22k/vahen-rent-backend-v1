@@ -13,6 +13,7 @@ router.post("/", authMiddleware, async (req, res) => {
       ...rest,
       images: Array.isArray(images) ? images : [],
       lenderId: req.user.id,
+      availability: "Available", // ✅ ADD THIS
     });
 
     res.json(car);
@@ -33,12 +34,16 @@ router.post("/update", authMiddleware, async (req, res) => {
       return res.status(400).json({ message: "carId missing" });
     }
 
+    const updateData = { ...rest };
+
+    // ✅ ONLY update images if provided
+    if (images && Array.isArray(images) && images.length > 0) {
+      updateData.images = images;
+    }
+
     const updatedCar = await Car.findByIdAndUpdate(
       carId,
-      {
-        ...rest,
-        images: Array.isArray(images) ? images : [],
-      },
+      updateData,
       { new: true }
     );
 

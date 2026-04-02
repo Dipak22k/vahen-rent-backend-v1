@@ -20,10 +20,21 @@ const MessageSchema = new mongoose.Schema({
   },
 
   type: {
-    type: String,
-    enum: ["text", "image", "location"],
-    default: "text",
-  },
+  type: String,
+  enum: [
+    "text",
+    "image",
+    "location",
+
+    // ✅ NEW TYPES (NON-BREAKING)
+    "offer",
+    "payment",
+    "booking",
+    "pickup",
+    "system"
+  ],
+  default: "text",
+},
 
   text: String,
   image: String,
@@ -33,6 +44,11 @@ const MessageSchema = new mongoose.Schema({
     lng: Number,
     address: String,
   },
+
+  metadata: {
+  type: mongoose.Schema.Types.Mixed,
+  default: {}
+},
 
   createdAt: {
     type: Date,

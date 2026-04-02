@@ -7,6 +7,7 @@ const path = require("path");
 
 const connectDB = require("./config/db");
 
+
 dotenv.config();
 connectDB();
 
@@ -37,10 +38,28 @@ app.use("/upload", require("./routes/uploadRoutes"));
 /* CHAT ROUTES */
 app.use("/api/chat", require("./routes/chatRoutes"));
 
+/* KYC ROUTES */
+
+app.use("/api/kyc", require("./kyc/kyc.routes"));
+
+/* OFFERS ROUTE */
+app.use("/api/offers", require("./routes/offerRoutes"));
+
+/* TEST ROUTE */
+
+const { loadModels } = require("./utils/faceMatcher");
+
+(async () => {
+  await loadModels();
+})();
+
+
 /* TEST ROUTE */
 app.get("/", (req, res) => {
   res.send("Backend is running 🚀");
 });
+
+
 
 /* ================= SOCKET SERVER ================= */
 
@@ -52,6 +71,8 @@ const io = new Server(server, {
     methods: ["GET", "POST"],
   },
 });
+
+
 
 /* 🔥 IMPORT YOUR ADVANCED SOCKET LOGIC */
 require("./socket/chatSocket")(io);
