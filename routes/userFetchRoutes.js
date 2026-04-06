@@ -10,8 +10,10 @@ router.get("/:id", async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-
-    res.json(user);
+res.json({
+  ...user._doc,
+  avatar: user.avatar || null,
+});
 
   } catch (err) {
     console.log("GET USER ERROR:", err);

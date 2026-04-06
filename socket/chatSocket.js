@@ -7,8 +7,12 @@ module.exports = (io) => {
   io.on("connection", (socket) => {
     console.log("User Connected:", socket.id);
 
+    // ============================
     // JOIN CHAT
+    // ============================
     socket.on("join_chat", async (chatId) => {
+      if (!chatId) return;
+
       socket.join(chatId);
 
       const chat = await Chat.findById(chatId);
@@ -17,43 +21,107 @@ module.exports = (io) => {
         socket.emit("chat_status_updated", {
           chatId,
           status: chat.status,
+          finalStatus: chat.finalStatus,
         });
       }
     });
 
-    // SEND MESSAGE
+    // ============================
+    // SEND MESSAGE (WITH SECURITY)
+    // ============================
     socket.on("send_message", async (data) => {
-      const message = await Message.create(data);
-      io.to(data.chatId).emit("receive_message", message);
+      try {
+        const { chatId, senderId, type } = data;
+
+        const chat = await Chat.findById(chatId);
+
+        if (!chat) {
+          return socket.emit("error", { message: "Chat not found" });
+        }
+
+        // ❌ Block if not accepted
+        if (chat.status !== "accepted") {
+          return socket.emit("error", {
+            message: "Chat not allowed yet",
+          });
+        }
+
+        // ❌ Block location before confirmation
+        if (type === "location" && chat.finalStatus !== "confirmed") {
+          return socket.emit("error", {
+            message: "Location sharing not allowed yet",
+          });
+        }
+
+        const message = await Message.create(data);
+
+        io.to(chatId).emit("receive_message", message);
+      } catch (err) {
+        socket.emit("error", { message: "Message failed" });
+      }
     });
 
-    // UPDATE STATUS (Accept / Reject)
-    socket.on("update_chat_status", async ({ chatId, status }) => {
-      const updatedChat = await Chat.findByIdAndUpdate(
-        chatId,
-        { status },
-        { new: true }
-      );
-      socket.emit("send_message", {
-  chatId,
-  senderId,
-  receiverId,
-  type: "location",
-  location: {
-    lat,
-    lng,
-    address,
-  },
-});
+    // ============================
+    // ACCEPT / REJECT CHAT (ONLY LENDER)
+    // ============================
+    socket.on("update_chat_status", async ({ chatId, status, userId }) => {
+      try {
+        const chat = await Chat.findById(chatId);
 
-      if (updatedChat) {
+        if (!chat) {
+          return socket.emit("error", { message: "Chat not found" });
+        }
+
+        // 🔐 Only lender can update
+        if (chat.lenderId.toString() !== userId) {
+          return socket.emit("error", {
+            message: "Only lender can update status",
+          });
+        }
+
+        chat.status = status;
+        await chat.save();
+
         io.to(chatId).emit("chat_status_updated", {
           chatId,
-          status: updatedChat.status,
+          status: chat.status,
         });
+      } catch (err) {
+        socket.emit("error", { message: "Update failed" });
       }
     });
 
+    // ============================
+    // FINAL RENT CONFIRMATION
+    // ============================
+    socket.on("confirm_rent", async ({ chatId, userId }) => {
+      try {
+        const chat = await Chat.findById(chatId);
+
+        if (!chat) {
+          return socket.emit("error", { message: "Chat not found" });
+        }
+
+        // 🔐 Only lender can confirm
+        if (chat.lenderId.toString() !== userId) {
+          return socket.emit("error", {
+            message: "Only lender can confirm rent",
+          });
+        }
+
+        chat.finalStatus = "confirmed";
+        await chat.save();
+
+        io.to(chatId).emit("rent_confirmed", {
+          chatId,
+          finalStatus: chat.finalStatus,
+        });
+      } catch (err) {
+        socket.emit("error", { message: "Confirmation failed" });
+      }
+    });
+
+    // ============================
     socket.on("disconnect", () => {
       console.log("User Disconnected");
     });
