@@ -206,6 +206,8 @@ exports.verifyResetOtp = async (req, res) => {
     const { email, otp } = req.body;
 
     const user = await User.findOne({ email });
+     console.log("RESET EMAIL:", email);
+console.log("USER FOUND:", !!user);
 
     if (!user || user.otp !== otp || user.otpExpiry < Date.now()) {
       return res.status(400).json({ message: "Invalid or expired OTP" });
@@ -216,7 +218,7 @@ exports.verifyResetOtp = async (req, res) => {
     user.passwordResetAllowed = true;
 
     await user.save();
-
+  console.log("OTP VERIFIED SUCCESSFULLY");
     res.json({ message: "OTP verified. Proceed to reset password." });
 
   } catch (err) {
@@ -230,16 +232,25 @@ exports.resetPassword = async (req, res) => {
   try {
     const { email, newPassword } = req.body;
 
+    // 👇 ADD HERE
+    console.log("NEW PASSWORD RECEIVED:", newPassword);
+
+    if (!newPassword) {
+      return res.status(400).json({ message: "New password is required" });
+    }
+
     const user = await User.findOne({ email });
 
-    if (!user || !user.passwordResetAllowed) {
-      return res.status(403).json({ message: "Unauthorized password reset" });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
     }
 
     user.password = newPassword;
     user.passwordResetAllowed = false;
 
     await user.save();
+
+    console.log("PASSWORD UPDATED SUCCESSFULLY");
 
     res.json({ message: "Password reset successful" });
 
@@ -248,7 +259,6 @@ exports.resetPassword = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
 /* ================= GOOGLE AUTH ================= */
 exports.googleAuth = async (req, res) => {
   try {
@@ -264,6 +274,8 @@ exports.googleAuth = async (req, res) => {
     const payload = ticket.getPayload();
 
     let user = await User.findOne({ email: payload.email });
+
+
 
     if (!user) {
       user = await User.create({

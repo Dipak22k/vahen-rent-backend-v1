@@ -41,7 +41,7 @@ router.post("/", upload.any(), (req, res) => {
       return res.status(400).json({ message: "No files uploaded" });
     }
 
-    const baseUrl = "http://10.122.71.15:5000"; // your IP
+    const baseUrl = "http://192.168.1.2:5000"; // your IP
 
     const imageUrls = files.map((file) => {
       const folder =

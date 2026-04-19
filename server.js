@@ -48,6 +48,11 @@ app.use("/api/offers", require("./routes/offerRoutes"));
 /* TEST ROUTE */
 
 const { loadModels } = require("./utils/faceMatcher");
+const paymentRoutes = require("./routes/paymentRoutes");
+
+/* PAYMENT ROUTE */
+app.use("/api/payment", paymentRoutes);
+
 
 (async () => {
   await loadModels();
