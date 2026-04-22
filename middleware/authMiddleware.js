@@ -11,7 +11,13 @@ module.exports = async (req, res, next) => {
 
     const token = authHeader.split(" ")[1];
 
+    // 🔥 ADD THIS
+    console.log("TOKEN RECEIVED:", token);
+
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    // 🔥 ADD THIS
+    console.log("DECODED ID:", decoded.id);
 
     const user = await User.findById(decoded.id).select("_id role");
 
@@ -20,10 +26,13 @@ module.exports = async (req, res, next) => {
     }
 
     req.user = {
-      id: user._id,     // ✅ OLD SYSTEM SAFE
-      _id: user._id,    // ✅ NEW KYC SUPPORT
+      id: user._id,
+      _id: user._id,
       role: user.role,
     };
+
+    // 🔥 ADD THIS
+    console.log("AUTH USER:", req.user);
 
     next();
 

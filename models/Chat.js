@@ -28,11 +28,22 @@ const ChatSchema = new mongoose.Schema(
       default: "pending",
     },
 
-    // ✅ ADD THIS
     finalStatus: {
       type: String,
-      enum: ["pending", "confirmed", "cancelled","closed"],
+      enum: ["pending", "confirmed", "cancelled", "closed"],
       default: "pending",
+    },
+
+    // 🔥 ADD THIS (MOST IMPORTANT)
+    unreadCounts: {
+      borrower: {
+        type: Number,
+        default: 0,
+      },
+      lender: {
+        type: Number,
+        default: 0,
+      },
     },
   },
   { timestamps: true }

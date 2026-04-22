@@ -3,11 +3,11 @@ const bcrypt = require("bcryptjs");
 
 const userSchema = new mongoose.Schema(
 {
-  name: { type: String, required: false },
+  name: { type: String },
 
   email: { type: String, required: true, unique: true },
 
-  password: { type: String, required: false },
+  password: { type: String },
 
   isEmailVerified: { type: Boolean, default: false },
 
@@ -19,7 +19,6 @@ const userSchema = new mongoose.Schema(
   role: {
     type: String,
     enum: ["owner", "borrower", "lender"],
-    required: false,
   },
 
   avatar: {
@@ -38,42 +37,40 @@ const userSchema = new mongoose.Schema(
     default: null,
   },
 
-  /* 🔐 ADVANCED KYC */
-  kyc: {
-    status: {
-      type: String,
-      enum: ["not_started", "pending", "verified", "rejected"],
-      default: "not_started",
-    },
-
-    idImage: {
-      type: String,
-      default: null,
-    },
-
-    selfieImage: {
-      type: String,
-      default: null,
-    },
-
-    faceMatchScore: {
-      type: Number,
-      default: null,
-    },
-
-    verifiedAt: {
-      type: Date,
-      default: null,
-    },
-
-    expiryDate: {
-      type: Date,
-      default: null,
-    },
+  socketId: {
+    type: String,
+    default: null,
   },
+
+  isOnline: {
+    type: Boolean,
+    default: false,
+  },
+
+  lastSeen: {
+    type: Date,
+    default: null,
+  },
+
+  isBlocked: {
+    type: Boolean,
+    default: false,
+  },
+
+  notifications: [
+    {
+      title: String,
+      message: String,
+      type: String,
+      read: { type: Boolean, default: false },
+      createdAt: { type: Date, default: Date.now },
+    },
+  ],
 },
 { timestamps: true }
 );
+
+// 🔐 PASSWORD HASHING
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password") || !this.password) return next();
 
@@ -83,15 +80,9 @@ userSchema.pre("save", async function (next) {
   next();
 });
 
+// 🔐 PASSWORD MATCH
 userSchema.methods.matchPassword = async function (enteredPassword) {
-  console.log("ENTERED PASSWORD:", enteredPassword);
-  console.log("HASH IN DB:", this.password);
-
-  const result = await bcrypt.compare(enteredPassword, this.password);
-
-  console.log("COMPARE RESULT:", result);
-
-  return result;
+  return await bcrypt.compare(enteredPassword, this.password);
 };
 
 module.exports = mongoose.model("User", userSchema);

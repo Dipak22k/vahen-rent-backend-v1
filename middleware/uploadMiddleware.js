@@ -10,9 +10,10 @@ const profileDir = path.join(__dirname, "..", "uploads", "profile");
 const carDir = path.join(__dirname, "..", "uploads", "cars");
 const idDir = path.join(__dirname, "..", "uploads", "kyc", "ids");
 const selfieDir = path.join(__dirname, "..", "uploads", "kyc", "selfies");
+const chatDir = path.join(__dirname, "..", "uploads", "chat");
 
 // Ensure all folders exist
-[profileDir, carDir, idDir, selfieDir].forEach((dir) => {
+[profileDir, carDir, idDir, selfieDir,chatDir].forEach((dir) => {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
@@ -24,15 +25,17 @@ const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     let folder;
 
-    if (file.fieldname === "avatar") {
-      folder = profileDir;
-    } else if (file.fieldname === "idImage") {
-      folder = idDir;
-    } else if (file.fieldname === "selfieImage") {
-      folder = selfieDir;
-    } else {
-      folder = carDir; // fallback
-    }
+   if (file.fieldname === "avatar") {
+  folder = profileDir;
+} else if (file.fieldname === "idImage") {
+  folder = idDir;
+} else if (file.fieldname === "selfieImage") {
+  folder = selfieDir;
+} else if (file.fieldname === "chatImage") {
+  folder = chatDir; // ✅ NEW
+} else {
+  folder = carDir;
+}
 
     cb(null, folder);
   },
