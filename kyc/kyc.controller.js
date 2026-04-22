@@ -1,77 +1,88 @@
-const User = require("../models/User");
-const { matchFaces } = require("../utils/faceMatcher");
+const Kyc = require("../models/Kyc");
 
-// ✅ Upload ID
+/* ================= UPLOAD ID ================= */
 exports.uploadId = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id);
+    const kyc = await Kyc.findOneAndUpdate(
+      { user: req.user._id },
+      {
+        $set: {
+          idImage: req.file.path,
+          status: "pending",
+        },
+      },
+      { new: true, upsert: true }
+    );
 
-    user.kyc.idImage = req.file.path;
-    user.kyc.status = "pending";
+    res.json({
+      message: "ID uploaded",
+      kycStatus: kyc.status,
+    });
 
-    await user.save();
-
-    res.json({ message: "ID uploaded" });
   } catch (err) {
+    console.log(err);
     res.status(500).json({ message: "Error uploading ID" });
   }
 };
-
-// ✅ Upload Selfie
+/* ================= UPLOAD SELFIE ================= */
 exports.uploadSelfie = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id);
+    const kyc = await Kyc.findOneAndUpdate(
+      { user: req.user._id },
+      {
+        $set: {
+          selfieImage: req.file.path,
+          status: "pending",
+        },
+      },
+      { new: true, upsert: true }
+    );
 
-    user.kyc.selfieImage = req.file.path;
-    user.kyc.status = "pending";
+    res.json({
+      message: "Selfie uploaded",
+      kycStatus: kyc.status,
+    });
 
-    await user.save();
-
-    res.json({ message: "Selfie uploaded" });
   } catch (err) {
     res.status(500).json({ message: "Error uploading selfie" });
   }
 };
-
-// ✅ VERIFY KYC (FACE MATCH)
+/* ================= VERIFY KYC ================= */
 exports.verifyKYC = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id);
+    console.log("VERIFY USER:", req.user._id);
 
-    if (!user.kyc.idImage || !user.kyc.selfieImage) {
-      return res.status(400).json({
-        message: "Upload ID and Selfie first",
+    const kyc = await Kyc.findOne({ user: req.user._id });
+
+    console.log("KYC FOUND:", kyc);
+
+    if (!kyc) {
+      return res.status(404).json({
+        message: "KYC not found for this user",
       });
     }
 
-    // 🔥 FACE MATCH
-    const result = await matchFaces(
-      user.kyc.idImage,
-      user.kyc.selfieImage
-    );
-
-    if (!result.match) {
-      user.kyc.status = "rejected";
-      await user.save();
-
+    if (!kyc.idImage || !kyc.selfieImage) {
       return res.status(400).json({
-        message: "FACE_NOT_MATCHED",
+        message: "Upload both ID and Selfie first",
       });
     }
 
-    // ✅ SUCCESS
-    user.kyc.status = "verified";
-    user.kyc.faceMatchScore = 0.6; // optional
-    user.kyc.verifiedAt = new Date();
+    // ✅ update directly
+    kyc.status = "verified";
+    kyc.verifiedAt = new Date();
 
-    await user.save();
+    await kyc.save();
 
-    res.json({
+    return res.json({
       message: "KYC_SUCCESS",
-      kyc: user.kyc,
+      kyc,
     });
+
   } catch (err) {
-    console.log(err);
-    res.status(500).json({ message: "KYC verification failed" });
+    console.log("VERIFY ERROR:", err);
+    return res.status(500).json({
+      message: "KYC verification failed",
+    });
   }
 };

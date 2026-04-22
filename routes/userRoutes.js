@@ -18,6 +18,9 @@ const {
 } = require("../controllers/authController");
 
 
+
+
+
 /* ================= UPDATE AVATAR ================= */
 router.post(
   "/update-avatar",
@@ -56,20 +59,22 @@ router.post(
 /* ================= CHECK KYC STATUS ================= */
 /* 🔐 Used for Pickup Location Unlock */
 
+const Kyc = require("../models/Kyc");
+
 router.get("/check-kyc/:userId", async (req, res) => {
   try {
-    const user = await User.findById(req.params.userId).select("kycStatus");
+    const kyc = await Kyc.findOne({ user: req.params.userId });
 
-    if (!user) {
-      return res.status(404).json({
+    if (!kyc) {
+      return res.json({
         verified: false,
-        status: "not_found"
+        status: "not_started",
       });
     }
 
     res.json({
-      verified: user.kycStatus === "verified",
-      status: user.kycStatus,
+      verified: kyc.status === "verified",
+      status: kyc.status,
     });
 
   } catch (error) {
@@ -100,6 +105,17 @@ router.get("/users/:id", async (req, res) => {
   }
 });
 
+console.log({
+  sendOtp,
+  verifyOtp,
+  register,
+  login,
+  sendResetOtp,
+  verifyResetOtp,
+  resetPassword,
+  googleAuth
+});
+
 
 /* ================= AUTH ROUTES ================= */
 router.post("/send-otp", sendOtp);
@@ -110,5 +126,7 @@ router.post("/send-reset-otp", sendResetOtp); // ✅ FIX
 router.post("/verify-reset-otp", verifyResetOtp);
 router.post("/reset-password", resetPassword);
 router.post("/google", googleAuth);
+
+
 
 module.exports = router;

@@ -2,18 +2,36 @@ const express = require("express");
 const router = express.Router();
 const Car = require("../models/Car");
 const authMiddleware = require("../middleware/authMiddleware");
+const Kyc = require("../models/Kyc");
 
 /* ================= ADD CAR ================= */
-
 router.post("/", authMiddleware, async (req, res) => {
   try {
+    const user = req.user;
+
+    // ✅ ONLY lender can add car
+    if (user.role !== "lender") {
+      return res.status(403).json({
+        message: "Only lenders can list cars"
+      });
+    }
+
+    // ✅ Check KYC
+    const kyc = await Kyc.findOne({ user: user.id });
+
+    if (!kyc || kyc.status !== "verified") {
+      return res.status(403).json({
+        message: "Complete KYC before listing cars"
+      });
+    }
+
     const { images, ...rest } = req.body;
 
     const car = await Car.create({
       ...rest,
       images: Array.isArray(images) ? images : [],
-      lenderId: req.user.id,
-      availability: "Available", // ✅ ADD THIS
+      lenderId: user.id,
+      availability: "Available",
     });
 
     res.json(car);
@@ -23,7 +41,6 @@ router.post("/", authMiddleware, async (req, res) => {
     res.status(400).json({ message: err.message });
   }
 });
-
 /* ================= UPDATE CAR ================= */
 
 router.post("/update", authMiddleware, async (req, res) => {

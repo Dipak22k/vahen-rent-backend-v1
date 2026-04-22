@@ -7,7 +7,17 @@ module.exports = (io) => {
   io.on("connection", (socket) => {
     console.log("User Connected:", socket.id);
 
+
+
+       // ============================
+    // JOIN USER (WITH SECURITY)
     // ============================
+
+    socket.on("join_user", (userId) => {
+  socket.join(userId);
+});
+
+
     // JOIN CHAT
     // ============================
     socket.on("join_chat", async (chatId) => {
@@ -73,7 +83,7 @@ module.exports = (io) => {
         }
 
         // 🔐 Only lender can update
-        if (chat.lenderId.toString() !== userId) {
+        if (String(chat.lenderId) !== String(userId)) {
           return socket.emit("error", {
             message: "Only lender can update status",
           });
@@ -82,10 +92,15 @@ module.exports = (io) => {
         chat.status = status;
         await chat.save();
 
-        io.to(chatId).emit("chat_status_updated", {
-          chatId,
+          io.to(chat.borrowerId.toString()).emit("chat_status_updated", {
+          chatId: chat._id,
           status: chat.status,
         });
+
+        io.to(chat.lenderId.toString()).emit("chat_status_updated", {
+          chatId: chat._id,
+          status: chat.status,
+});
       } catch (err) {
         socket.emit("error", { message: "Update failed" });
       }
@@ -103,7 +118,7 @@ module.exports = (io) => {
         }
 
         // 🔐 Only lender can confirm
-        if (chat.lenderId.toString() !== userId) {
+        if (String(chat.lenderId) !== String(userId)) {
           return socket.emit("error", {
             message: "Only lender can confirm rent",
           });

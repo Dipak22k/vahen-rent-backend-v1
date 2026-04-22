@@ -2,13 +2,18 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 
+console.log("🔥 KYC MULTER LOADED");
+
 /* ================= CREATE FOLDERS ================= */
 
 const profileDir = path.join(__dirname, "..", "uploads", "profile");
 const carDir = path.join(__dirname, "..", "uploads", "cars");
+const idDir = path.join(__dirname, "..", "uploads", "kyc", "ids");
+const selfieDir = path.join(__dirname, "..", "uploads", "kyc", "selfies");
+const chatDir = path.join(__dirname, "..", "uploads", "chat");
 
-// Ensure folders exist
-[profileDir, carDir].forEach((dir) => {
+// Ensure all folders exist
+[profileDir, carDir, idDir, selfieDir,chatDir].forEach((dir) => {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
@@ -18,12 +23,19 @@ const carDir = path.join(__dirname, "..", "uploads", "cars");
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    let folder = carDir; // default
+    let folder;
 
-    // ✅ FIX: Route-based detection (reliable)
-    if (req.originalUrl.includes("update-avatar")) {
-      folder = profileDir;
-    }
+   if (file.fieldname === "avatar") {
+  folder = profileDir;
+} else if (file.fieldname === "idImage") {
+  folder = idDir;
+} else if (file.fieldname === "selfieImage") {
+  folder = selfieDir;
+} else if (file.fieldname === "chatImage") {
+  folder = chatDir; // ✅ NEW
+} else {
+  folder = carDir;
+}
 
     cb(null, folder);
   },
@@ -33,7 +45,7 @@ const storage = multer.diskStorage({
       Date.now() +
       "-" +
       file.fieldname +
-      path.extname(file.originalname).replace(/\s+/g, "_");
+      path.extname(file.originalname);
 
     cb(null, uniqueName);
   },
@@ -42,16 +54,10 @@ const storage = multer.diskStorage({
 /* ================= FILE FILTER ================= */
 
 const fileFilter = (req, file, cb) => {
-  const allowedTypes = /jpg|jpeg|png/;
-
-  const ext = allowedTypes.test(
-    path.extname(file.originalname).toLowerCase()
-  );
-
-  if (ext) {
+  if (file.mimetype.startsWith("image")) {
     cb(null, true);
   } else {
-    cb(new Error("Only JPG, JPEG, PNG images are allowed"));
+    cb(new Error("Only image files allowed"), false);
   }
 };
 
@@ -60,5 +66,7 @@ const fileFilter = (req, file, cb) => {
 module.exports = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 🔥 increase to 10MB
+  },
 });
